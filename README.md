@@ -1,11 +1,11 @@
 # requirementsreadwrite
 
-# Oscilloscope & Function Generator – Reader/Writer (requirementsreadwrite)
+# Oscilloscope & Function Generator – Python (reqfRead / reqfWrite)
 
-Implements `reqfRead` and `reqfWrite` with a file-backed mock device (no hardware needed). 
-Includes a CLI test driver and hooks to verify throughput/latency requirements.
+Implements `reqfRead` and `reqfWrite` in Python with a file-backed mock device.
+CLI supports **acquire** and **generate**; prints bytes, duration, throughput, and latency percentiles (read).
 
-## Build
+## Setup
 ```bash
-mkdir -p build && cd build
-c++ -O2 -std=c++17 ../src/main.cpp ../src/reader_writer.cpp -o oscifgen
+python -m venv .venv && source .venv/bin/activate  # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
