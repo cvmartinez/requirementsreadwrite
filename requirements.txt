@@ -1,0 +1,20 @@
+# USB/FTDI I/O
+pyusb>=1.2.1
+pyftdi>=0.55.0
+
+# CLI
+click>=8.1.0
+
+# Metrics / analysis
+numpy>=1.26.0
+pandas>=2.1.0
+
+# Plots for benchmarks/latency
+matplotlib>=3.8.0
+
+# Testing / microbenchmarks
+pytest>=8.0.0
+pytest-benchmark>=4.0.0
+
+# Nice logs (optional but helpful)
+rich>=13.5.0
