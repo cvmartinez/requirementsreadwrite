@@ -1,72 +1,55 @@
-# scope_mt/scope.py
 import sys
-import threading
-
-from .stop_token import StopToken
-from .mic_device import MicrophoneDevice
-from .timer_thread import TimerThread
-from .reader_thread import ReaderThread
+from scp_config import scpConfig
+from scp_controller import scpController
 
 
-class ScopeApp:
-    def __init__(self):
-        self.out_lock = threading.Lock()
+def parse_args(argv):
+    """
+    For: python scope.py start sampleTime=1ms wait=5s stop
+    We just care about sampleTime and wait/sampleFor.
+    """
+    sample_time_ms = 1.0
+    duration_s = 5.0
+    scale = 1.0
+    offset = 0.0
+    freq_hz = 2.0
+    amplitude = 1.0
 
-    def run(self, sample_ms, wait_s):
-        stop = StopToken()
+    for token in argv:
+        if token.startswith("sampleTime="):
+            value = token.split("=", 1)[1].strip()
+            if value.endswith("ms"):
+                sample_time_ms = float(value[:-2])
+            elif value.endswith("s"):
+                sample_time_ms = float(value[:-1]) * 1000.0
+        elif token.startswith("wait=") or token.startswith("sampleFor="):
+            value = token.split("=", 1)[1].strip()
+            if value.endswith("s"):
+                duration_s = float(value[:-1])
+        elif token.startswith("scale="):
+            scale = float(token.split("=", 1)[1])
+        elif token.startswith("offset="):
+            offset = float(token.split("=", 1)[1])
 
-        # Use microphone as the input device instead of FTDI
-        # sample_interval is how often we read from the mic
-        sample_interval_s = sample_ms / 1000.0
+    sample_time_s = sample_time_ms / 1000.0
 
-        # Create the device – default system mic
-        dev = MicrophoneDevice(samplerate=44100, channels=1)
-
-        timer = TimerThread(wait_s, stop, self.out_lock)
-        reader = ReaderThread(dev, sample_interval_s, stop, self.out_lock)
-
-        with self.out_lock:
-            print(
-                f"[main] start scope (mic): sample={sample_ms}ms wait={wait_s}s")
-
-        reader.start()
-        timer.start()
-
-        timer.join()
-        stop.stop()
-        reader.join()
-
-        print("[main] scope finished")
-
-
-def parse_command(argv):
-    tokens = argv[1:]
-    if tokens[0] != "start" or tokens[-1] != "stop":
-        raise SystemExit("Usage: scope start sampleTime=1ms wait=5s stop")
-
-    sample_ms = None
-    wait_s = None
-
-    for tok in tokens[1:-1]:
-        t = tok.replace(" ", "")
-        if t.startswith("sampleTime="):
-            sample_ms = int(t.split("=")[1][:-2])
-        if t.startswith("wait="):
-            wait_s = int(t.split("=")[1][:-1])
-
-    if sample_ms is None or wait_s is None:
-        raise SystemExit(
-            "Error: Both sampleTime=Xms and wait=Ys are required.\n"
-            "Example: scope start sampleTime=1ms wait=5s stop"
-        )
-
-    return sample_ms, wait_s
+    return scpConfig(
+        sample_time=sample_time_s,
+        duration=duration_s,
+        scale=scale,
+        offset=offset,
+        freq_hz=freq_hz,
+        amplitude=amplitude,
+    )
 
 
-def main(argv):
-    sample_ms, wait_s = parse_command(argv)
-    ScopeApp().run(sample_ms, wait_s)
+def main():
+    args = sys.argv[1:]  # e.g. ['start', 'sampleTime=1ms', 'wait=5s', 'stop']
+    config = parse_args(args)
+    controller = scpController()
+    controller.run_scope(config)
 
 
 if __name__ == "__main__":
-    main(sys.argv)
+    main()
+
