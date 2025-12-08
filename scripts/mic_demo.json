@@ -1,0 +1,22 @@
+{
+    "sequence": [
+        {
+            "start": {
+                "mode": "acquire",
+                "in": "mic://default",
+                "out": "mic_capture.bin",
+                "fs": 8000,
+                "n": 16000,
+                "chunk": 512
+            }
+        },
+        {
+            "wait": {
+                "seconds": 2
+            }
+        },
+        {
+            "stop": {}
+        }
+    ]
+}

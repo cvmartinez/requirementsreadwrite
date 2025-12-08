@@ -1,6 +1,6 @@
 # USB/FTDI I/O
-pyusb>=1.2.1
-pyftdi>=0.55.0
+# pyusb>=1.2.1
+# pyftdi>=0.55.0
 
 # CLI
 click>=8.1.0
@@ -18,3 +18,7 @@ pytest-benchmark>=4.0.0
 
 # Nice logs (optional but helpful)
 rich>=13.5.0
+
+# Microphone input
+sounddevice>=0.4.6
+numpy>=1.26

@@ -1,7 +1,3 @@
-# oscifgen/__init__.py
-from .reader import Reader
-from .writer import Writer
-from .wavegen import Wave, make_wave
-
-__all__ = ["Reader", "Writer", "Wave", "make_wave"]
+# Keep this file minimal to avoid import side effects.
 __version__ = "0.1.0"
+__all__ = []
