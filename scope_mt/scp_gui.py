@@ -4,12 +4,12 @@ import threading
 import queue
 import time
 
-from scp_config import scpConfig
-from scp_signal_source import scpSignalSource
-from scp_pipeline import scpPipelineProcessor
+from .scp_config import scpConfig
+from .scp_signal_source import scpSignalSource
+from .scp_pipeline import scpPipelineProcessor
 
 
-class ScopeGUI:
+class scpGuiView:
     """
     Tkinter-based GUI oscilloscope.
 
@@ -313,43 +313,32 @@ class ScopeGUI:
     def _on_freq_change(self, value: float) -> None:
         self.freq_hz = value
         self.freq_label_val.set(f"{value:.1f} Hz")
-
-        # While running, push the new value into the signal source
         if self.running and self.signal_source is not None:
             self.signal_source.freq_hz = value
 
     def _on_amp_change(self, value: float) -> None:
         self.amplitude = value
         self.amp_label_val.set(f"{value:.2f}")
-
-        # While running, push the new value into the signal source
         if self.running and self.signal_source is not None:
             self.signal_source.amplitude = value
 
     def _on_sample_time_change(self, value: float) -> None:
-        # value is in ms on the slider; store in seconds internally
         self.sample_time = value / 1000.0
         self.sample_label_val.set(f"{value:.2f} ms")
-        # New sample_time will be used on next Start.
 
     def _on_duration_change(self, value: float) -> None:
         self.duration_s = value
         self.duration_label_val.set(f"{value:.1f} s")
-        # New duration will be used on next Start.
 
     def _on_scale_change(self, value: float) -> None:
         self.scale = value
         self.scale_label_val.set(f"{value:.2f}")
-
-        # While running, update the pipeline
         if self.running and self.pipeline is not None:
             self.pipeline.scale = value
 
     def _on_offset_change(self, value: float) -> None:
         self.offset = value
         self.offset_label_val.set(f"{value:.2f}")
-
-        # While running, update the pipeline
         if self.running and self.pipeline is not None:
             self.pipeline.offset = value
 
@@ -361,7 +350,6 @@ class ScopeGUI:
         if self.running:
             return
 
-        # Build config (matches CLI-style config fields)
         self.config = scpConfig(
             sample_time=self.sample_time,
             duration=self.duration_s,
@@ -371,7 +359,6 @@ class ScopeGUI:
             amplitude=self.amplitude,
         )
 
-        # Model components
         self.signal_source = scpSignalSource(
             self.config.freq_hz,
             self.config.amplitude,
@@ -382,7 +369,6 @@ class ScopeGUI:
             offset=self.config.offset,
         )
 
-        # Reset buffers
         self.y_values = []
         with self.sample_queue.mutex:
             self.sample_queue.queue.clear()
@@ -406,14 +392,9 @@ class ScopeGUI:
         self.info_label.config(text="Stopped")
 
     def _acquisition_loop(self) -> None:
-        """
-        Background thread: generates samples and pushes them into the queue
-        for the GUI thread to render.
-        """
         start_t = time.time()
         next_t = start_t
         end_t = start_t + self.duration_s
-
         sample_time = self.sample_time
 
         while self.running and time.time() < end_t:
@@ -423,7 +404,6 @@ class ScopeGUI:
             try:
                 self.sample_queue.put_nowait(processed)
             except queue.Full:
-                # If GUI is behind, drop samples
                 pass
 
             next_t += sample_time
@@ -431,7 +411,6 @@ class ScopeGUI:
             if sleep_t > 0:
                 time.sleep(sleep_t)
 
-        # Clean up at the end of acquisition
         self.running = False
         self.root.after(0, self._on_acquisition_finished)
 
@@ -446,17 +425,13 @@ class ScopeGUI:
     # ------------------------------------------------------------------
 
     def update_canvas(self) -> None:
-        """Called periodically on the Tk main thread to redraw waveform."""
-        # Drain queue
         while not self.sample_queue.empty():
             self.y_values.append(self.sample_queue.get())
 
-        # Keep only last N points so it looks like a scrolling trace
         max_points = 800
         if len(self.y_values) > max_points:
             self.y_values = self.y_values[-max_points:]
 
-        # Redraw
         self.canvas.delete("wave")
         self.canvas.delete("hud")
 
@@ -464,7 +439,7 @@ class ScopeGUI:
             w = self.canvas_width
             h = self.canvas_height
             mid_y = h / 2
-            amp_scale = h * 0.4  # 40% of height
+            amp_scale = h * 0.4
 
             n = len(self.y_values)
             points: list[float] = []
@@ -481,7 +456,6 @@ class ScopeGUI:
                 tags="wave",
             )
 
-        # HUD text
         hud_text = (
             f"freq={self.freq_hz:.1f}Hz  "
             f"amp={self.amplitude:.2f}  "
@@ -498,13 +472,12 @@ class ScopeGUI:
             tags="hud",
         )
 
-        # Schedule next update
         self.root.after(30, self.update_canvas)
 
 
 def main() -> None:
     root = tk.Tk()
-    app = ScopeGUI(root)
+    app = scpGuiView(root)
     root.mainloop()
 
 

@@ -3,7 +3,7 @@ import threading
 import time
 
 
-class ReaderThread(threading.Thread):
+class scpscpReaderThread(threading.Thread):
     def __init__(self, dev, sample_interval_s, stop_token, out_lock):
         super().__init__(daemon=True)
         self.dev = dev

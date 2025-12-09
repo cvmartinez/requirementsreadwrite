@@ -1,14 +1,16 @@
+from .scp_logger import scpLogger
+
+
 class scpTerminalView:
     """
-    Text-based oscilloscope view.
-    Prints samples so they scroll down the terminal.
+    Terminal-based View for the oscilloscope.
     """
 
-    def render_sample(self, index: int, value: float) -> None:
-        print(f"{index:06d}: {value: .4f}")
+    def __init__(self, logger: scpLogger | None = None) -> None:
+        self._logger = logger or scpLogger()
 
-    def render_summary(self, total_samples: int, duration: float, eff_rate: float) -> None:
-        print("\n--- Acquisition Summary ---")
-        print(f"Samples:   {total_samples}")
-        print(f"Duration:  {duration:.3f} s")
-        print(f"Eff. rate: {eff_rate:.1f} samples/s")
+    def show_sample(self, t: float, value: float) -> None:
+        """
+        Display a single processed sample at time t (seconds).
+        """
+        self._logger.log(f"t={t:8.3f}s  value={value: .5f}")

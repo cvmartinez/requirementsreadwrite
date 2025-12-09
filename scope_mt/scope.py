@@ -1,13 +1,30 @@
+"""
+scope.py
+Entry point for the oscilloscope application.
+Supports both CLI and GUI modes using the same controller and model.
+"""
+
 import sys
-from scp_config import scpConfig
-from scp_controller import scpController
+
+try:
+    # Package-style imports: python -m scope_mt.scope --cli/--ui
+    from .scp_config import scpConfig
+    from .scp_controller import scpController
+except ImportError:
+    # Script-style imports: python scope.py --cli/--ui (from inside scope_mt)
+    from scp_config import scpConfig
+    from scp_controller import scpController
 
 
 def parse_args(argv):
     """
-    For: python scope.py start sampleTime=1ms wait=5s stop
-    We just care about sampleTime and wait/sampleFor.
+    Supported CLI tokens:
+      sampleTime=1ms or sampleTime=0.001s
+      sampleFor=5s   or wait=5s
+      scale=1.0
+      offset=0.0
     """
+
     sample_time_ms = 1.0
     duration_s = 5.0
     scale = 1.0
@@ -46,7 +63,6 @@ def parse_args(argv):
 def main():
     argv = sys.argv[1:]
 
-    # detect mode flag
     mode = "cli"
     if "--ui" in argv:
         mode = "ui"
@@ -56,13 +72,17 @@ def main():
         argv = [a for a in argv if a != "--cli"]
 
     if mode == "ui":
-        # GUI lives in the same folder: scope_mt/scp_gui.py
-        from scp_gui import main as gui_main
+        try:
+            from .scp_gui import main as gui_main
+        except ImportError:
+            from scp_gui import main as gui_main
         gui_main()
-    else:
-        config = parse_args(argv)
-        controller = scpController()
-        controller.run_scope(config)
+        return
+
+    # CLI mode
+    config = parse_args(argv)
+    controller = scpController()
+    controller.run_scope(config)
 
 
 if __name__ == "__main__":

@@ -1,14 +1,13 @@
-import threading
-
-
 class scpStopToken:
-    """Thread-safe stop flag shared between threads."""
+    """
+    Cooperative stop flag for threads/loops.
+    """
 
     def __init__(self) -> None:
-        self._event = threading.Event()
+        self._stopped = False
 
     def stop(self) -> None:
-        self._event.set()
+        self._stopped = True
 
-    def is_stopped(self) -> bool:
-        return self._event.is_set()
+    def stopped(self) -> bool:
+        return self._stopped
