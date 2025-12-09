@@ -36,6 +36,11 @@ class ScopeGUI:
         self.sample_queue: "queue.Queue[float]" = queue.Queue(maxsize=5000)
         self.y_values: list[float] = []
 
+        # Model references (set in start_acquisition)
+        self.config: scpConfig | None = None
+        self.signal_source: scpSignalSource | None = None
+        self.pipeline: scpPipelineProcessor | None = None
+
         # Canvas settings
         self.canvas_width = 800
         self.canvas_height = 320
@@ -309,26 +314,44 @@ class ScopeGUI:
         self.freq_hz = value
         self.freq_label_val.set(f"{value:.1f} Hz")
 
+        # While running, push the new value into the signal source
+        if self.running and self.signal_source is not None:
+            self.signal_source.freq_hz = value
+
     def _on_amp_change(self, value: float) -> None:
         self.amplitude = value
         self.amp_label_val.set(f"{value:.2f}")
+
+        # While running, push the new value into the signal source
+        if self.running and self.signal_source is not None:
+            self.signal_source.amplitude = value
 
     def _on_sample_time_change(self, value: float) -> None:
         # value is in ms on the slider; store in seconds internally
         self.sample_time = value / 1000.0
         self.sample_label_val.set(f"{value:.2f} ms")
+        # New sample_time will be used on next Start.
 
     def _on_duration_change(self, value: float) -> None:
         self.duration_s = value
         self.duration_label_val.set(f"{value:.1f} s")
+        # New duration will be used on next Start.
 
     def _on_scale_change(self, value: float) -> None:
         self.scale = value
         self.scale_label_val.set(f"{value:.2f}")
 
+        # While running, update the pipeline
+        if self.running and self.pipeline is not None:
+            self.pipeline.scale = value
+
     def _on_offset_change(self, value: float) -> None:
         self.offset = value
         self.offset_label_val.set(f"{value:.2f}")
+
+        # While running, update the pipeline
+        if self.running and self.pipeline is not None:
+            self.pipeline.offset = value
 
     # ------------------------------------------------------------------
     # ACQUISITION CONTROL
@@ -391,7 +414,7 @@ class ScopeGUI:
         next_t = start_t
         end_t = start_t + self.duration_s
 
-        sample_time = self.config.sample_time
+        sample_time = self.sample_time
 
         while self.running and time.time() < end_t:
             raw = self.signal_source.next_sample()
@@ -459,7 +482,12 @@ class ScopeGUI:
             )
 
         # HUD text
-        hud_text = f"freq={self.freq_hz:.1f}Hz  amp={self.amplitude:.2f}  scale={self.scale:.2f}  offset={self.offset:.2f}"
+        hud_text = (
+            f"freq={self.freq_hz:.1f}Hz  "
+            f"amp={self.amplitude:.2f}  "
+            f"scale={self.scale:.2f}  "
+            f"offset={self.offset:.2f}"
+        )
         self.canvas.create_text(
             10,
             10,

@@ -44,12 +44,26 @@ def parse_args(argv):
 
 
 def main():
-    args = sys.argv[1:]  # e.g. ['start', 'sampleTime=1ms', 'wait=5s', 'stop']
-    config = parse_args(args)
-    controller = scpController()
-    controller.run_scope(config)
+    argv = sys.argv[1:]
+
+    # detect mode flag
+    mode = "cli"
+    if "--ui" in argv:
+        mode = "ui"
+        argv = [a for a in argv if a != "--ui"]
+    if "--cli" in argv:
+        mode = "cli"
+        argv = [a for a in argv if a != "--cli"]
+
+    if mode == "ui":
+        # GUI lives in the same folder: scope_mt/scp_gui.py
+        from scp_gui import main as gui_main
+        gui_main()
+    else:
+        config = parse_args(argv)
+        controller = scpController()
+        controller.run_scope(config)
 
 
 if __name__ == "__main__":
     main()
-
